@@ -1,0 +1,25 @@
+/* Header.css */
+
+.header {
+    position: relative;
+  }
+  
+  .search-input {
+    top: 100%;
+    width: 200px; /* Adjust width as needed */
+  }
+  
+  .user-details-container {
+    top: 100%;
+    background-color: #fff;
+    color: #333;
+  }
+  
+  .user-photo {
+    transition: border-color 0.3s ease-in-out;
+  }
+  
+  .user-photo:hover {
+    border-color: #38b2ac; /* Adjust hover border color */
+  }
+  
