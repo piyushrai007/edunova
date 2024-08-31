@@ -1,0 +1,38 @@
+.typewriter-container {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  
+  .typewriter {
+    display: inline-block;
+    overflow: hidden; /* Ensures the content is not revealed until the animation */
+    white-space: nowrap; /* Keeps the content on a single line */
+    margin-right: 8px; /* Add some margin to the right of the cursor */
+    animation: typewriter 3s steps(40) infinite;
+    
+  }
+  
+  .typewriter-text {
+    color: rgb(177, 129, 99);
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  /* The typing effect */
+  @keyframes typewriter {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+  .section-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .section-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  

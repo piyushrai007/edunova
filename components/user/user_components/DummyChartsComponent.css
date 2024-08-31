@@ -1,0 +1,38 @@
+.dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 30px;
+    padding: 20px;
+  }
+  
+  .chart-card {
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    width: 400px;
+    transition: transform 0.3s ease;
+  }
+  
+  .chart-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .chart-title {
+    background: linear-gradient(to right, #FF5E7D, #FFA7B2);
+    color: white;
+    padding: 15px;
+    margin: 0;
+    border-radius: 15px 15px 0 0;
+  }
+  
+  .chart-container {
+    padding: 20px;
+  }
+  
+  .chart-container canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+  
