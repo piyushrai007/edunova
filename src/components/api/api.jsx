@@ -2,9 +2,22 @@ import axios from 'axios';
 
 // Create a custom axios instance
 const api = axios.create({
-  baseURL: 'https://075dhm4s-8000.inc1.devtunnels.ms/api/',
+  baseURL: 'https://backend-nfkn.onrender.com/api',
   timeout: 5000,
 });
+
+// Function to send a keep-alive request
+const keepServerAlive = async () => {
+  try {
+    await api.get('/keep-alive'); // Replace with an appropriate endpoint for your server
+  } catch (error) {
+    console.error('Error keeping server alive', error);
+  }
+};
+
+// Set an interval to keep the server alive every 4 minutes
+const KEEP_ALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
+setInterval(keepServerAlive, KEEP_ALIVE_INTERVAL);
 
 // Add a response interceptor
 api.interceptors.response.use(
