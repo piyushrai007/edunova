@@ -27,6 +27,9 @@ function StudentDashboard() {
   const [blogs, setBlogs] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // For responsive sidebar
 
+
+
+  // using fetch
   const fetchBlogs = async () => {
     try {
       let username = localStorage.getItem('username');
