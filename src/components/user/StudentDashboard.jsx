@@ -31,13 +31,12 @@ function StudentDashboard() {
     try {
       let username = localStorage.getItem('username');
       console.log('userblogs - Username:', username);
-      const response = await api.get(`/blogs/?author=${username}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
+      const response = await fetch(`https://backend-nfkn.onrender.com/api/blogs/?=${username}`, {
+        method: 'GET',
       });
-      console.log('Fetched blogs:', response.data);
-      setBlogs(response.data);
+      const data = await response.json();
+      console.log('Fetched blogs:', data);
+      setBlogs(data);
     } catch (error) {
       console.error('Error fetching blogs', error);
     }
