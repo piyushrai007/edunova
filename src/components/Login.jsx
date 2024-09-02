@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../api/api';
+import api from './api/api';
 import './user_components/StudentDashboard.css';
 import Modal from 'react-modal';
 import Loading from './Loading';
