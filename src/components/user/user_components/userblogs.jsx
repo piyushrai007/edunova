@@ -12,12 +12,24 @@ ChartJS.register(...registerables);
 
 export function BlogChart({ blogs }) {
   // Prepare data for the chart
+  const [loading, setLoading] = useState(true); // Add loading state
   const dateCounts = {};
   const totalBlogs = [];
   const averageLengths = [];
 
-  blogs.forEach(blog => {
-    const date = format(new Date(blog.created_at), 'yyyy-MM-dd'); // Format the date as 'yyyy-MM-dd'
+  useEffect(() => {
+    // Set a timeout to stop the loading after 8 seconds
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000); // 8 seconds
+
+    // Clean up the timer when the component unmounts
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Prepare data for the chart
+  blogs.forEach((blog) => {
+    const date = format(new Date(blog.created_at), 'yyyy-MM-dd');
 
     // Total number of blogs over time
     if (dateCounts[date]) {
@@ -69,7 +81,59 @@ export function BlogChart({ blogs }) {
     ],
   };
 
-  return (
+  // Unique spinning meter loading animation
+  const SpinningLoader = () => (
+    <div className="spinning-loader">
+      <div className="spinner"></div>
+      <p>Loading charts, please wait...</p>
+      <style jsx>{`
+        .spinning-loader {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 200px; /* Adjust as needed */
+        }
+        .spinner {
+          width: 50px;
+          height: 50px;
+          border: 6px solid rgba(0, 0, 0, 0.1);
+          border-top-color: #3498db; /* Blue color */
+          border-radius: 50%;
+          animation: spin 2s linear infinite, colorChange 8s linear infinite;
+        }
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes colorChange {
+          0% {
+            border-top-color: #3498db; /* Blue */
+          }
+          25% {
+            border-top-color: #e67e22; /* Orange */
+          }
+          50% {
+            border-top-color: #e74c3c; /* Red */
+          }
+          75% {
+            border-top-color: #9b59b6; /* Purple */
+          }
+          100% {
+            border-top-color: #3498db; /* Blue */
+          }
+        }
+      `}</style>
+    </div>
+  );
+
+  return loading ? (
+    <SpinningLoader />
+  ) : (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="chart-card bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 p-6 rounded-lg shadow-md">
         <h2 className="text-lg font-semibold mb-4 text-white">Total Number of Blogs Over Time</h2>
@@ -84,15 +148,6 @@ export function BlogChart({ blogs }) {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
 
 
 

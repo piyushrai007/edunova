@@ -27,24 +27,21 @@ function StudentDashboard() {
   const [blogs, setBlogs] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // For responsive sidebar
 
-
-
-  // using fetch
   const fetchBlogs = async () => {
     try {
       let username = localStorage.getItem('username');
       console.log('userblogs - Username:', username);
-      const response = await fetch(`https://backend-nfkn.onrender.com/api/blogs/?=${username}`, {
-        method: 'GET',
+      const response = await api.get(`/blogs/?author=${username}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
       });
-      const data = await response.json();
-      console.log('Fetched blogs:', data);
-      setBlogs(data);
+      console.log('Fetched blogs:', response.data);
+      setBlogs(response.data);
     } catch (error) {
       console.error('Error fetching blogs', error);
     }
   }
-
   useEffect(() => {
     fetchBlogs();
   }, []);

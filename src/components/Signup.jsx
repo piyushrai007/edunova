@@ -64,7 +64,9 @@ const Signup = () => {
     const checkUsernameAvailability = async (username) => {
         try {
             const response = await api.get(`check_username/${username}`);
-            setUsernameAvailable(response.data.available);
+            console.log(response.data.exists);
+            setUsernameAvailable(!response.data.exists);
+            console.log('Username available:', response.data.exists);
         } catch (error) {
             console.log(error);
         }

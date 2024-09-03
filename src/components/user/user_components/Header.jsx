@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { FaBell, FaSearch, FaCog, FaSignOutAlt, FaSun, FaMoon } from 'react-icons/fa';
+import { edunova } from "../../../assets";
+
 
 function Header({ user, onLogoutClick }) {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-
+console.log('Header - User:', user.photo);
   const toggleUserDetails = () => {
     setShowUserDetails(!showUserDetails);
   };
@@ -26,9 +28,9 @@ function Header({ user, onLogoutClick }) {
   return (
     <nav className={`bg-white border-gray-100 dark:bg-gray-900 p-4`}>
       <div className="max-w-screen- flex flex-wrap items-center justify-between mx-auto">
-        <a href="#" className="flex items-center space-x-3 rtl:space-x-reverse">
-          <img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Logo" />
-          <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Student Dashboard</span>
+        <a href="#" className="flex space-x-10 rtl:space-x-reverse">
+          <img src={edunova}      className="h-10" alt="Logo" />
+          <h1 className="animate-typing overflow-hidden whitespace-nowrap border-r-4 border-r-pink-400 pr-5 text-3xl text-gradient font-bold">Welcome! {user.user.first_name}</h1>
         </a>
 
         <div className="flex items-center md:order-2 space-x-3 rtl:space-x-reverse">

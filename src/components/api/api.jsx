@@ -9,14 +9,15 @@ const api = axios.create({
 // Function to send a keep-alive request
 const keepServerAlive = async () => {
   try {
-    await api.get('/keep-alive'); // Replace with an appropriate endpoint for your server
+    respo  = await api.get('/blogs/'); // Replace with an appropriate endpoint for your server
+    console.log(respo.data);
   } catch (error) {
     console.error('Error keeping server alive', error);
   }
 };
 
 // Set an interval to keep the server alive every 4 minutes
-const KEEP_ALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
+const KEEP_ALIVE_INTERVAL = 4 * 60 * 100; // 4 minutes
 setInterval(keepServerAlive, KEEP_ALIVE_INTERVAL);
 
 // Add a response interceptor
