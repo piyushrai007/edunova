@@ -169,7 +169,7 @@ function TeacherDashboard() {
       formData.append('video', lectureFile);
 
       // Send the video to the Flask API
-      const flaskResponse = await fetch('http://127.0.0.1:5000/process_video', {
+      const flaskResponse = await fetch('https://api-ilcz.onrender.com/process_video/process_video', {
         method: 'POST',
         body: formData,
       });
