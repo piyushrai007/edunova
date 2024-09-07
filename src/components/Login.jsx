@@ -22,6 +22,7 @@ function Login() {
             if (response.status === 200) {
                 console.log('Login successful!', response.data);
                 localStorage.setItem('accessToken', response.data.access);
+                localStorage.setItem('refreshToken', response.data.refresh);
                 localStorage.setItem('user_type', response.data.user_type);
                 localStorage.setItem('username', username); // store username
                 localStorage.setItem('userId', response.data.user_id); // store user ID
