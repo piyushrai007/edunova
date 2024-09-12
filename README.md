@@ -87,13 +87,12 @@ Welcome to the Student Dashboard project! This project is a comprehensive platfo
 - JWT tokens will be used for securing API requests.
 
 ## Contributing
-We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) for more details.
+We welcome contributions! 
 
-## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 
 ## Contact
-For any inquiries or issues, please contact us at support@studentdashboard.com.
+For any inquiries or issues, please contact us at piyushraivds45@gmail.com.
 
 ---
 
