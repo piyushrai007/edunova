@@ -8,6 +8,8 @@ import { Link } from "react-router-dom";
 import { FiBook, FiUser } from "react-icons/fi";
 import api from "./api/api";
 import videoFile from './dd.mp4';
+import './Signup.css'; // Import the CSS file
+import { toast } from 'react-toastify';
 
 
 const Signup = () => {
@@ -27,9 +29,11 @@ const Signup = () => {
     const [errors, setErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
     const [usernameAvailable, setUsernameAvailable] = useState(true);
+    const [isLoading, setIsLoading] = useState(false); // Loading state
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+        setIsLoading(true); // Start loading
 
         const formData = new FormData();
         formData.append('user.username', username);
@@ -50,20 +54,41 @@ const Signup = () => {
         try {
             const response = await api.post(`${isTeacher ? 'teachers' : 'students'}/`, formData);
             setSuccessMessage('Registration successful!');
-            navigate("/login");
+            navigate("/login",{ state: { successMessage: 'Registration successful!' } });
         } catch (error) {
             if (error.response) {
                 setErrors(error.response.data);
-                alert(JSON.stringify(error.response.data));
+                const errorMessages = formatErrorMessages(error.response.data);
+                toast.error(errorMessages);
+                console.log(JSON.stringify(error.response.data))
             } else {
                 console.log('Error', error.message);
             }
+        } finally {
+            setIsLoading(false); // Stop loading
         }
+    };
+    const formatErrorMessages = (errorData) => {
+        let messages = [];
+        for (const key in errorData) {
+            if (Array.isArray(errorData[key])) {
+                errorData[key].forEach(message => {
+                    messages.push(`${key} - ${message}`);
+                });
+            } else if (typeof errorData[key] === 'object') {
+                for (const subKey in errorData[key]) {
+                    errorData[key][subKey].forEach(message => {
+                        messages.push(`${key}.${subKey} - ${message}`);
+                    });
+                }
+            }
+        }
+        return messages.join(' ');
     };
 
     const checkUsernameAvailability = async (username) => {
         try {
-            const response = await api.get(`check_username/${username}`);
+            const response = await api.get(`check_username/${username}/`);
             console.log(response.data.exists);
             setUsernameAvailable(!response.data.exists);
             console.log('Username available:', response.data.exists);
@@ -91,32 +116,31 @@ const Signup = () => {
 
     return (
         <div className="h-full bg-gray-400 dark:bg-gray-900 flex flex-col lg:flex-row">
-            <div className="flex w-full lg:w-1/2 h-64 lg:h-auto">
-                {/* Left part for the video */}
-                <div className="w-full  h-full">
-                    <video 
-                        className="w-full h-full object-cover"
-                        autoPlay loop muted>
-                        <source src={videoFile} type="video/mp4" />
-                    </video>
-                </div>
-            </div>
-
+        <div className="flex w-full lg:w-1/2 h-64 lg:h-auto">
+          <div className="relative w-full h-full">
+            <video 
+              className="w-full h-full object-cover"
+              autoPlay loop muted>
+              <source src={videoFile} type="video/mp4" />
+            </video>
+            <div className="absolute top-0 left-0 w-full h-full bg-black opacity-50"></div>
+          </div>
+        </div>
             <div className="w-full lg:w-1/2 h-auto lg:h-full flex justify-center items-center">
-                <div className="w-full object-cover bg-white dark:bg-gray-700 rounded-lg">
-                    <h3 className="py-4 text-2xl text-center text-gray-800 dark:text-white">Create an Account!</h3>
+                <div className="w-full object-cover bg-black dark:bg-gray-700 rounded-lg">
+                <h3 className="py-4 text-2xl text-center text-gray-800 glowing-text">Create an Account!</h3>                    
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center justify-center w-full">
                             <FiBook
-                                className={`cursor-pointer mr-2 text-3xl ${isTeacher ? 'text-blue-500' : 'text-gray-400'}`}
+                                className={`cursor-pointer mr-2 text-3xl ${isTeacher ? 'text-blue-500  glowing-text ' : 'text-gray-400'}`}
                                 onClick={() => setIsTeacher(true)}
                             />
                             <FiUser
-                                className={`cursor-pointer text-3xl ${isTeacher ? 'text-gray-400' : 'text-blue-500'}`}
+                                className={`cursor-pointer text-3xl ${isTeacher ? 'text-gray-400' : 'text-blue-500  glowing-text'}`}
                                 onClick={() => setIsTeacher(false)}
                             />
                         </div>
-                        <p className="text-gray-800 dark:text-white">Register as a {isTeacher ? 'Teacher' : 'Student'}</p>
+                        <p className="text-gray-800 light:text-gray glowing-text">Register as a {isTeacher ? 'Teacher' : 'Student'}</p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
@@ -131,7 +155,7 @@ const Signup = () => {
                                 onChange={(e) => setFirstName(e.target.value)}
                                 placeholder="First Name"
                             />
-                            {errors.firstName && <p className="text-red-500">{errors.firstName}</p>}
+                            {errors.firstName && <p className="text-red">{errors.firstName}</p>}
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="lastName" className="text-n-1">
@@ -145,7 +169,7 @@ const Signup = () => {
                                 onChange={(e) => setLastName(e.target.value)}
                                 placeholder="Last Name"
                             />
-                            {errors.lastName && <p className="text-red-500">{errors.lastName}</p>}
+                            {errors.lastName && <p className="text-red">{errors.lastName}</p>}
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="email" className="text-n-1">
@@ -160,7 +184,7 @@ const Signup = () => {
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Email"
                             />
-                            {errors.email && <p className="text-red-500">{errors.email}</p>}
+                            {errors.email && <p className="text-red">{errors.email}</p>}
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="username" className="text-n-1">
@@ -177,8 +201,8 @@ const Signup = () => {
                                 }}
                                 placeholder="Username"
                             />
-                            {!usernameAvailable && <p className="text-red-500">Username is taken</p>}
-                            {errors.username && <p className="text-red-500">{errors.username}</p>}
+                            {!usernameAvailable && <p className="text-red">Username is taken</p>}
+                            {errors.username && <p className="text-red">{errors.username}</p>}
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="password" className="text-n-1">
@@ -193,7 +217,7 @@ const Signup = () => {
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Password"
                             />
-                            {errors.password && <p className="text-red-500">{errors.password}</p>}
+                            {errors.password && <p className="text-red">{errors.password}</p>}
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="c_password" className="text-n-1">
@@ -220,7 +244,7 @@ const Signup = () => {
                                     onChange={(e) => setDepartment(e.target.value)}
                                     placeholder="Department"
                                 />
-                                {errors.department && <p className="text-red-500">{errors.department}</p>}
+                                {errors.department && <p className="text-red">{errors.department}</p>}
                             </div>
                         ) : (
                             <>
@@ -236,7 +260,7 @@ const Signup = () => {
                                         onChange={(e) => setEnrollment(e.target.value)}
                                         placeholder="Enrollment"
                                     />
-                                    {errors.enrollment && <p className="text-red-500">{errors.enrollment}</p>}
+                                    {errors.enrollment && <p className="text-red">{errors.enrollment}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <label htmlFor="branch" className="text-n-1">
@@ -250,7 +274,7 @@ const Signup = () => {
                                         onChange={(e) => setBranch(e.target.value)}
                                         placeholder="Branch"
                                     />
-                                    {errors.branch && <p className="text-red-500">{errors.branch}</p>}
+                                    {errors.branch && <p className="text-red">{errors.branch}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <label htmlFor="photo" className="text-n-1">
@@ -262,21 +286,34 @@ const Signup = () => {
                                         type="file"
                                         onChange={(e) => setPhoto(e.target.files[0])}
                                     />
-                                    {errors.photo && <p className="text-red-500">{errors.photo}</p>}
+                                    {errors.photo && <p className="text-red">{errors.photo}</p>}
                                 </div>
                             </>
                         )}
-                        <div className="text-center">
-                            <Button type="submit">Register Account</Button>
+                         <div className="text-center">
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? (
+                                    <dotlottie-player
+                                    src="https://lottie.host/71c0f00d-ed75-4dd9-adc1-bf17ea9453ae/9Bj7nxdREN.json"
+                                    background="transparent"
+                                    speed="1"
+                                    style={{ width: '50px', height: '50px' }}
+                                    loop
+                                    autoplay
+                                  /> // Loading animation
+                                ) : (
+                                    "Register Account"
+                                )}
+                            </Button>
                         </div>
                         <hr className="my-6 border-t" />
                         <div className="text-center">
-                            <a className="inline-block text-sm text-blue-500 dark:text-blue-500 hover:text-blue-800" href="#">
+                            <a className="inline-block text-sm glowing-text dark:text-blue-500 hover:text-blue-800 " href="#">
                                 Forgot Password?
                             </a>
                         </div>
                         <div className="text-center">
-                            <a className="inline-block text-sm text-blue-500 dark:text-blue-500 hover:text-blue-800" href="/login">
+                            <a className="inline-block text-sm glowing-text dark:text-blue-500 hover:text-blue-800" href="/login">
                                 Already have an account? Login!
                             </a>
                         </div>

@@ -1,103 +1,103 @@
-import React, { useState } from 'react';
-import { FaChalkboardTeacher, FaBlog } from 'react-icons/fa';
+import React, { forwardRef ,useState} from 'react';
+import dashboard from '../../../assets/images/dashboard.png';
+import email from '../../../assets/images/email.png';
+import settings from '../../../assets/images/setting.png';
+import logout from '../../../assets/images/logout.png';
+import info from '../../../assets/images/information.png';
 
-function Sidebar({ onClassroomClick, onBlogsClick, onDashboardClick }) {
-  const [isOpen, setIsOpen] = useState(false);
+// Import Ionicons for mobile app icons
+import { IonIcon } from '@ionic/react';
+import { homeOutline, schoolOutline, newspaperOutline, logOutOutline, settingsOutline } from 'ionicons/icons';
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
+export const Sidebar = forwardRef(({ onDashboardClick, onClassroomClick, onBlogsClick, onQuizClick, isOpen, toggleSidebar, user, onLogoutClick }, ref) => {
+  const handleOptionClick = (callback) => {
+    callback();
+    toggleSidebar();
+  };
+  const [selectedOption, setSelectedOption] = useState('dashboard');
+
+  const handleOptionClickk = (option, callback) => {
+    setSelectedOption(option);
+    callback();
   };
 
   return (
-    <div>
-      {/* Drawer init and show */}
-      <div className="text-center">
-        <button
-          className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-          type="button"
-          onClick={toggleSidebar} // Updated to use toggleSidebar
-        >
-          Show navigation
-        </button>
-      </div>
+    <>  
+      {/* Toggle Button */}
+      <button ref={ref} onClick={toggleSidebar} className={`fixed top-10 left-2 z-50 p-2 bg-indigo-600 text-white rounded-full ${isOpen ? 'hidden' : 'block'}`}>
+        ➤
+      </button>
 
-      {/* Drawer component */}
-      <div
-        id="drawer-navigation"
-        className={`fixed top-0 left-0 z-40 w-64 h-screen p-4 overflow-y-auto transition-transform ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } bg-white dark:bg-gray-800`}
-        tabIndex="-1"
-        aria-labelledby="drawer-navigation-label"
+      {/* Sidebar for larger screens */}
+      <aside className={`fixed top-20 left-0 h-full w-64 bg-gray-800 dark:bg-gray-900 z-40 shadow-lg transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:block hidden`}>
+        <nav className="flex flex-col p-4 space-y-4">
+          {/* User Profile Section */}
+          <div className="flex flex-col items-center mb-4 text-white">
+            <img className="w-16 h-16 rounded-full bg-white" src={user.photo} alt="User" />
+            <span className="text-lg font-bold mt-2">{user.user.first_name} {user.user.last_name}</span>
+            <span className="text-sm">Student</span>
+            <button className="mt-4 px-2 py-1 rounded-md bg-green-100 text-green-600" onClick={onLogoutClick}>
+              Logout
+            </button>
+          </div>
+
+          {/* Sidebar Options */}
+          <button onClick={() => handleOptionClick(onDashboardClick)} className="w-full text-left text-white dark:text-gray-300 font-semibold hover:bg-indigo-600 dark:hover:bg-indigo-500 rounded-lg p-2 transition-colors flex items-center">
+            <img src={dashboard} className="w-6 h-6 mr-3" alt="Dashboard" />
+            Dashboard
+          </button>
+          <button onClick={() => handleOptionClick(onClassroomClick)} className="w-full text-left text-white dark:text-gray-300 font-semibold hover:bg-indigo-600 dark:hover:bg-indigo-500 rounded-lg p-2 transition-colors flex items-center">
+            <img src={email} className="w-6 h-6 mr-3" alt="Classrooms" />
+            Classrooms
+          </button>
+          <button onClick={() => handleOptionClick(onBlogsClick)} className="w-full text-left text-white dark:text-gray-300 font-semibold hover:bg-indigo-600 dark:hover:bg-indigo-500 rounded-lg p-2 transition-colors flex items-center">
+            <img src={settings} className="w-6 h-6 mr-3" alt="Blogs" />
+            Blogs
+          </button>
+          <button onClick={() => handleOptionClick(onQuizClick)} className="w-full text-left text-white dark:text-gray-300 font-semibold hover:bg-indigo-600 dark:hover:bg-indigo-500 rounded-lg p-2 transition-colors flex items-center">
+            <img src={logout} className="w-6 h-6 mr-3" alt="Quiz" />
+            Quiz
+          </button>
+          <button onClick={() => handleOptionClick(onLogoutClick)} className="w-full text-left text-white dark:text-gray-300 font-semibold hover:bg-red-600 dark:hover:bg-red-500 rounded-lg p-2 transition-colors flex items-center">
+            <img src={info} className="w-6 h-6 mr-3" alt="Sign Out" />
+            Sign Out
+          </button>
+        </nav>
+      </aside>
+
+      {/* Bottom Navigation for Mobile Screens */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-800 dark:bg-gray-900 p-2 flex justify-around lg:hidden">
+      <button
+        onClick={() => handleOptionClickk('dashboard', onDashboardClick)}
+        className={`text-2xl ${selectedOption === 'dashboard' ? 'text-yellow-500' : 'text-white'}`}
       >
-        <h5 id="drawer-navigation-label" className="text-base font-semibold text-gray-500 uppercase dark:text-gray-400">
-          Menu
-        </h5>
-        <button
-          type="button"
-          onClick={toggleSidebar} // Updated to use toggleSidebar
-          aria-controls="drawer-navigation"
-          className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 end-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
-        >
-          <svg
-            aria-hidden="true"
-            className="w-5 h-5"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fillRule="evenodd"
-              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            ></path>
-          </svg>
-          <span className="sr-only">Close menu</span>
-        </button>
-        <div className="py-4 overflow-y-auto">
-          <ul className="space-y-2 font-medium">
-            <li>
-              <a
-                href="#"
-                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
-                onClick={onDashboardClick}
-              >
-                <FaChalkboardTeacher className="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-                <span className="ms-3">Dashboard</span>
-              </a>
-            </li>
-            <li>
-              <a
-                href="#"
-                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
-                onClick={onClassroomClick}
-              >
-                <FaChalkboardTeacher className="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-                <span className="ms-3">Classroom</span>
-              </a>
-            </li>
-            <li>
-              <a
-                href="#"
-                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
-                onClick={onBlogsClick}
-              >
-                <FaBlog className="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-                <span className="ms-3">Blogs</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-      {/* Overlay for mobile */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black opacity-50 z-10"
-          onClick={toggleSidebar}
-        ></div>
-      )}
+        <IonIcon icon={homeOutline} />
+      </button>
+      <button
+        onClick={() => handleOptionClickk('classroom', onClassroomClick)}
+        className={`text-2xl ${selectedOption === 'classroom' ? 'text-yellow-500' : 'text-white'}`}
+      >
+        <IonIcon icon={schoolOutline} />
+      </button>
+      <button
+        onClick={() => handleOptionClickk('blogs', onBlogsClick)}
+        className={`text-2xl ${selectedOption === 'blogs' ? 'text-yellow-500' : 'text-white'}`}
+      >
+        <IonIcon icon={newspaperOutline} />
+      </button>
+      <button
+        onClick={() => handleOptionClickk('quiz', onQuizClick)}
+        className={`text-2xl ${selectedOption === 'quiz' ? 'text-yellow-500' : 'text-white'}`}
+      >
+        <IonIcon icon={settingsOutline} />
+      </button>
+      <button
+        onClick={() => handleOptionClickk('logout', onLogoutClick)}
+        className={`text-2xl ${selectedOption === 'logout' ? 'text-yellow-500' : 'text-white'}`}
+      >
+        <IonIcon icon={logOutOutline} />
+      </button>
     </div>
+    </>
   );
-}
-
-export default Sidebar;
+});

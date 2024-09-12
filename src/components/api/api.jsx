@@ -9,12 +9,22 @@ const api = axios.create({
 // Function to send a keep-alive request
 const keepServerAlive = async () => {
   try {
-    respo  = await api.get('/blogs/'); // Replace with an appropriate endpoint for your server
-    console.log(respo.data);
+    const response = await fetch('https://backend-nfkn.onrender.com/api/blogs/', {
+      method: 'GET',
+      timeout: 50000
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);
+    } else {
+      throw new Error('Request failed');
+    }
   } catch (error) {
     console.error('Error keeping server alive', error);
   }
 };
+
 
 // Set an interval to keep the server alive every 4 minutes
 const KEEP_ALIVE_INTERVAL = 4 * 60 * 100; // 4 minutes
@@ -33,6 +43,7 @@ api.interceptors.response.use(
       // Try to get a new access token using the refresh token
       try {
         const response = await api.post('token/refresh/', { refresh: refreshToken });
+        console.log('Access token refreshed:', response.data);
 
         // Update the access token in local storage
         localStorage.setItem('accessToken', response.data.access);

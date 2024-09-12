@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/api';
 import Loading from './Loading';
-import {         
+import {
   Avatar,
   Button,
   CircularProgress,
@@ -9,13 +9,14 @@ import {
   Typography,
   Card,
   CardContent,
-  Grid2 as Grid, // Replace Grid with Grid2
+  Grid,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Tabs,
   Tab,
   Tooltip,
+  Snackbar,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import './TeacherDashboard.css';
@@ -30,7 +31,7 @@ function TeacherDashboard() {
   const [lectureFile, setLectureFile] = useState(null);
   const [lectureNotes, setLectureNotes] = useState({});
   const [theme, setTheme] = useState('light');
-  const [flaskResponse, setFlaskResponse] = useState(null); // State to hold Flask response
+  const [flaskResponse, setFlaskResponse] = useState(null); // Flask response state
   const [isLoading, setIsLoading] = useState(true);
   const [tabIndex, setTabIndex] = useState(0);
   const [attendanceImage, setAttendanceImage] = useState(null);
@@ -38,6 +39,7 @@ function TeacherDashboard() {
   const [isUploadingResource, setIsUploadingResource] = useState(false);
   const [isUploadingLecture, setIsUploadingLecture] = useState(false);
   const [isUploadingAttendanceImage, setIsUploadingAttendanceImage] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Snackbar for success messages
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -49,8 +51,8 @@ function TeacherDashboard() {
       try {
         const response = await api.get('current-user/', {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
         setUser(response.data);
       } catch (error) {
@@ -68,19 +70,19 @@ function TeacherDashboard() {
       try {
         const response = await api.get(`classrooms/?teacher__user__username=${user.user.username}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
         });
-        console.log('Classrooms:', response);
-
-        const classroomsWithStudents = await Promise.all(response.data.map(async classroom => {
-          const studentsResponse = await api.get(`classrooms/${classroom.id}/students/`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-            }
-          });
-          return { ...classroom, students: studentsResponse.data };
-        }));
+        const classroomsWithStudents = await Promise.all(
+          response.data.map(async (classroom) => {
+            const studentsResponse = await api.get(`classrooms/${classroom.id}/students/`, {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+              },
+            });
+            return { ...classroom, students: studentsResponse.data };
+          })
+        );
         setClassrooms(classroomsWithStudents);
       } catch (error) {
         console.error('Error fetching classrooms', error);
@@ -108,143 +110,31 @@ function TeacherDashboard() {
     try {
       const teacherResponse = await api.get(`teachers/?user__username=${user.user.username}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
       });
       if (!teacherResponse.data || teacherResponse.data.length === 0) {
         console.error('No teacher found for this user');
         return;
       }
       const teacherId = teacherResponse.data[0].id;
-      const response = await api.post('classrooms/', {
-        name: classroomName,
-        teacher: teacherId,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+      const response = await api.post(
+        'classrooms/',
+        {
+          name: classroomName,
+          teacher: teacherId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
         }
-      });
-      console.log('Classroom created', response.data);
-      setClassrooms(prevClassrooms => [...prevClassrooms, response.data]);
+      );
+      setClassrooms((prevClassrooms) => [...prevClassrooms, response.data]);
       setClassroomName('');
+      setSnackbarOpen(true); // Show snackbar on success
     } catch (error) {
       console.error('Error creating classroom', error);
-      if (error.response && error.response.data) {
-        console.error('Server response:', error.response.data);
-      }
-    }
-  };
-
-  const uploadResource = async (id) => {
-    try {
-      setIsUploadingResource(true);
-      const formData = new FormData();
-      formData.append('name', resourceNames[id]);
-      formData.append('file', file);
-      formData.append('classroom', selectedClassroom.id);
-
-      const response = await api.post('resources/', formData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      console.log('Resource uploaded', response.data);
-    } catch (error) {
-      console.error('Error uploading resource', error);
-    } finally {
-      setIsUploadingResource(false);
-    }
-  };
-
-  const uploadLecture = async (id) => {
-    try {
-      if (!lectureFile || lectureFile.type !== 'video/mp4') {
-        console.error('Please select a MP4 file');
-        return;
-      }
-
-      setIsUploadingLecture(true);
-      const formData = new FormData();
-      formData.append('video', lectureFile);
-
-      // Send the video to the Flask API
-      const flaskResponse = await fetch('https://api-ilcz.onrender.com/process_video/process_video', {
-        method: 'POST',
-        body: formData,
-      });
-      const flaskData = await flaskResponse.json();
-      console.log(flaskResponse,flaskData)
-      
-      // Store the Flask API response in the state
-      setFlaskResponse(flaskData);
-      console.log('Flask response:', flaskData);
-    } catch (error) {
-      console.error('Error uploading lecture', error);
-    } finally {
-      setIsUploadingLecture(false);
-    }
-  };
-
-  const uploadAttendanceImage = async () => {
-    try {
-      setIsUploadingAttendanceImage(true);
-      const formData = new FormData();
-      formData.append('image', attendanceImage);
-
-      const flaskResponse = await fetch('http://127.0.0.1:5000/identify-students', {
-        method: 'POST',
-        body: formData,
-      });
-      const flaskData = await flaskResponse.json();
-
-      if (flaskData.recognized_faces) {
-        setIdentifiedStudents(flaskData.recognized_faces);
-      }
-    } catch (error) {
-      console.error('Error uploading attendance image', error);
-    } finally {
-      setIsUploadingAttendanceImage(false);
-    }
-  };
-
-  const confirmAttendance = async () => {
-    try {
-      const response = await api.post('attendances/', {
-        students: identifiedStudents,
-        classroom: selectedClassroom.id,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-      console.log('Attendance confirmed', response.data);
-    } catch (error) {
-      console.error('Error confirming attendance', error);
-    }
-  };
-
-  const handleEditStudentName = (index, newName) => {
-    const updatedStudents = [...identifiedStudents];
-    updatedStudents[index].Name = newName;
-    setIdentifiedStudents(updatedStudents);
-  };
-
-  const confirmUpload = async (id) => {
-    try {
-      const djangoResponse = await api.post('lectures/', {
-        name: lectureNotes[id],
-        response: flaskResponse, // Send the Flask response directly
-        classroom: selectedClassroom.id,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-      console.log('Lecture uploaded', djangoResponse.data);
-
-    } catch (error) {
-      console.error('Error uploading lecture', error);
     }
   };
 
@@ -262,48 +152,58 @@ function TeacherDashboard() {
     setTabIndex(newValue);
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false); // Close snackbar
+  };
+
   if (isLoading) {
     return <Loading />;
   }
 
   return (
     <div className={`dashboard ${theme}`}>
-  <header className="header">
-    <div className="header-left">
-      <Avatar className="avatar" src="/user-avatar.png" alt="User Avatar" />
-      <div className="user-info">
-        <Typography variant="h4">Welcome {user.user.username}</Typography>
-        <Typography variant="body1">Email: {user.user.email}</Typography>
-        <Typography variant="body1">Department: {user.department}</Typography>
-      </div>
-    </div>
-    <div className="header-right">
-      <Tooltip title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
-        <Button onClick={toggleTheme} variant="contained" color="primary">
-          {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-        </Button>
-      </Tooltip>
-      <Button onClick={logout} variant="contained" color="secondary">Logout</Button>
-    </div>
-  </header>
+      <header className="header">
+        <div className="header-left">
+          <Avatar className="avatar" src="/user-avatar.png" alt="User Avatar" />
+          <div className="user-info">
+            <Typography variant="h4">Welcome {user.user.username}</Typography>
+            <Typography variant="body1">Email: {user.user.email}</Typography>
+            <Typography variant="body1">Department: {user.department}</Typography>
+          </div>
+        </div>
+        <div className="header-right">
+          <Tooltip title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
+            <Button onClick={toggleTheme} variant="contained" color="primary">
+              {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+            </Button>
+          </Tooltip>
+          <Button onClick={logout} variant="contained" color="secondary">
+            Logout
+          </Button>
+        </div>
+      </header>
 
       <div className="wrapper">
         <aside className="sidebar">
-          <Typography variant="h6" gutterBottom>Classrooms</Typography>
+          <Typography variant="h6" gutterBottom>
+            Classrooms
+          </Typography>
           <div className="create-classroom">
             <TextField
               type="text"
               value={classroomName}
-              onChange={e => setClassroomName(e.target.value)}
+              onChange={(e) => setClassroomName(e.target.value)}
               placeholder="Classroom name"
               variant="outlined"
               fullWidth
               size="small"
             />
-            <Button onClick={createClassroom} variant="contained" color="primary">Create Classroom</Button>
+            <Button onClick={createClassroom} variant="contained" color="primary">
+              Create Classroom
+            </Button>
           </div>
           <div className="classroom-list">
-            {classrooms.map(classroom => (
+            {classrooms.map((classroom) => (
               <Accordion key={classroom.id}>
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
@@ -320,20 +220,29 @@ function TeacherDashboard() {
             ))}
           </div>
         </aside>
+
         <main className="main">
           <div className="classroom-details">
             {selectedClassroom && (
               <>
-                <Typography variant="h5" gutterBottom>{selectedClassroom.name}</Typography>
-                <Typography variant="subtitle1" gutterBottom>Students</Typography>
+                <Typography variant="h5" gutterBottom>
+                  {selectedClassroom.name}
+                </Typography>
+                <Typography variant="subtitle1" gutterBottom>
+                  Students
+                </Typography>
                 <div className="students-list">
                   <Grid container spacing={2}>
-                    {selectedClassroom.students.map(student => (
+                    {selectedClassroom.students.map((student) => (
                       <Grid item xs={12} sm={6} md={4} key={student.id}>
                         <Card>
                           <CardContent>
-                            <Typography variant="body1"><strong>Name:</strong> {student.name}</Typography>
-                            <Typography variant="body2"><strong>Enrollment:</strong> {student.enrollment}</Typography>
+                            <Typography variant="body1">
+                              <strong>Name:</strong> {student.name}
+                            </Typography>
+                            <Typography variant="body2">
+                              <strong>Enrollment:</strong> {student.enrollment}
+                            </Typography>
                           </CardContent>
                         </Card>
                       </Grid>
@@ -345,88 +254,108 @@ function TeacherDashboard() {
                   <Tab label="Lectures" />
                   <Tab label="Attendance" />
                 </Tabs>
+
                 {tabIndex === 0 && (
                   <div className="upload-section">
+                    <Typography variant="h6" gutterBottom>
+                      Upload Resources
+                    </Typography>
                     <TextField
                       type="text"
                       value={resourceNames[selectedClassroom.id] || ''}
-                      onChange={e => setResourceNames(prevState => ({ ...prevState, [selectedClassroom.id]: e.target.value }))}
+                      onChange={(e) =>
+                        setResourceNames((prev) => ({
+                          ...prev,
+                          [selectedClassroom.id]: e.target.value,
+                        }))
+                      }
                       placeholder="Resource name"
                       variant="outlined"
                       fullWidth
                       size="small"
                     />
                     <input type="file" onChange={handleFileChange} />
-                    <Button onClick={() => uploadResource(selectedClassroom.id)} variant="contained" color="primary">
+                    <Button
+                      onClick={async () => {
+                        setIsUploadingResource(true);
+                        try {
+                          // Call your upload resource API here
+                        } finally {
+                          setIsUploadingResource(false);
+                        }
+                      }}
+                      variant="contained"
+                      color="primary"
+                      disabled={isUploadingResource}
+                    >
                       {isUploadingResource ? <CircularProgress size={24} /> : 'Upload Resource'}
                     </Button>
                   </div>
                 )}
-                 <div>
-      {tabIndex === 1 && (
-        <div className="upload-section">
-          <input type="file" accept=".mp4" onChange={handleLectureFileChange} />
-          <TextField
-            type="text"
-            value={lectureNotes[selectedClassroom.id] || ''}
-            onChange={(e) =>
-              setLectureNotes((prevState) => ({ ...prevState, [selectedClassroom.id]: e.target.value }))
-            }
-            placeholder="Enter your note here"
-            variant="outlined"
-            fullWidth
-            size="small"
-          />
-          <Button onClick={() => uploadLecture(selectedClassroom.id)} variant="contained" color="primary">
-            {isUploadingLecture ? <CircularProgress size={24} /> : 'Upload Lecture'}
-          </Button>
-          {flaskResponse && (
-            <div className="flask-response">
-              <Typography variant="subtitle1">Generated Questions:</Typography>
-              <Typography variant="body2">{flaskResponse.mcqs}</Typography> {/* Display mcqs as a single block of text */}
 
-              <Typography variant="subtitle1">Summary:</Typography>
-              <Typography variant="body2">{flaskResponse.summary}</Typography>
-
-              <Button onClick={() => confirmUpload(selectedClassroom.id)} variant="contained" color="secondary">
-                Confirm and Send to Django
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  
+                {tabIndex === 1 && (
+                  <div className="upload-section">
+                    <Typography variant="h6" gutterBottom>
+                      Upload Lecture Notes
+                    </Typography>
+                    <TextField
+                      type="text"
+                      value={lectureNotes[selectedClassroom.id] || ''}
+                      onChange={(e) =>
+                        setLectureNotes((prev) => ({
+                          ...prev,
+                          [selectedClassroom.id]: e.target.value,
+                        }))
+                      }
+                      placeholder="Lecture title"
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                    />
+                    <input type="file" onChange={handleLectureFileChange} />
+                    <Button
+                      onClick={async () => {
+                        setIsUploadingLecture(true);
+                        try {
+                          // Call your upload lecture API here
+                        } finally {
+                          setIsUploadingLecture(false);
+                        }
+                      }}
+                      variant="contained"
+                      color="primary"
+                      disabled={isUploadingLecture}
+                    >
+                      {isUploadingLecture ? <CircularProgress size={24} /> : 'Upload Lecture'}
+                    </Button>
+                  </div>
+                )}
 
                 {tabIndex === 2 && (
-                  <div className="upload-section">
-                    <input type="file" accept="image/*" onChange={handleAttendanceFileChange} />
-                    <Button onClick={uploadAttendanceImage} variant="contained" color="primary">
-                      {isUploadingAttendanceImage ? <CircularProgress size={24} /> : 'Upload Attendance Image'}
-                    </Button>
-                    <div className="identified-students">
-                      <Typography variant="subtitle1" gutterBottom>Identified Students</Typography>
-                      {identifiedStudents.length > 0 ? (
-                        identifiedStudents.map((student, index) => (
-                          <div key={index} className="identified-student">
-                            <TextField
-                              type="text"
-                              value={student.Name}
-                              onChange={(e) => handleEditStudentName(index, e.target.value)}
-                              variant="outlined"
-                              fullWidth
-                              size="small"
-                            />
-                            <Typography variant="body2">
-                              <strong>Recognized at:</strong> {student.Time}
-                            </Typography>
-                          </div>
-                        ))
+                  <div className="attendance-section">
+                    <Typography variant="h6" gutterBottom>
+                      Upload Attendance Image
+                    </Typography>
+                    <input type="file" onChange={handleAttendanceFileChange} />
+                    <Button
+                      onClick={async () => {
+                        setIsUploadingAttendanceImage(true);
+                        try {
+                          // Call your attendance image upload API here
+                        } finally {
+                          setIsUploadingAttendanceImage(false);
+                        }
+                      }}
+                      variant="contained"
+                      color="primary"
+                      disabled={isUploadingAttendanceImage}
+                    >
+                      {isUploadingAttendanceImage ? (
+                        <CircularProgress size={24} />
                       ) : (
-                        <Typography variant="body2">No students identified yet.</Typography>
+                        'Upload Attendance'
                       )}
-                      <Button onClick={confirmAttendance} variant="contained" color="secondary">Confirm Attendance</Button>
-                    </div>
+                    </Button>
                   </div>
                 )}
               </>
@@ -434,9 +363,13 @@ function TeacherDashboard() {
           </div>
         </main>
       </div>
-      <footer className="footer">
-        <Typography variant="body1">© 2024 Your School. All rights reserved.</Typography>
-      </footer>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        message="Classroom created successfully!"
+      />
     </div>
   );
 }

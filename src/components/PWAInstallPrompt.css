@@ -1,0 +1,23 @@
+.pwa-install-prompt {
+    position: fixed;
+    top: 20px; /* Changed to top for toast-like display */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgb(23, 2, 2);
+    border: 1px solid #3d2e2e;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    z-index: 1000;
+  }
+  
+  .pwa-install-prompt-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .pwa-install-prompt button {
+    margin-left: 8px;
+  }
+  

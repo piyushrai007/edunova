@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from "./api/api";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify'; // Import ToastContainer and toast
+import 'react-toastify/dist/ReactToastify.css'; // Import Toastify CSS
+
 
 function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || ''); // Retrieve success message from state
     const [loading, setLoading] = useState(false); // State to manage loading
+    const [showPassword, setShowPassword] = useState(false);
 
+    useEffect(() => {
+        if (location.state?.successMessage) {
+            toast.success(location.state.successMessage);
+            
+            // Clear the state after a short delay to ensure the message displays
+            const timer = setTimeout(() => {
+                navigate(location.pathname, { replace: true, state: {} });
+            }, 3000); // Delay for 3 seconds or any suitable duration
+    
+            return () => clearTimeout(timer); // Cleanup on component unmount
+        }
+    }, [location, navigate]);
+    
     const handleLogin = async (event) => {
         event.preventDefault();
         setLoading(true); // Start loading
@@ -52,6 +71,9 @@ function Login() {
                             <p className="text-gray-800 text-sm mt-4 ">Don't have an account <a href="/signup" className="text-blue-600 font-semibold hover:underline ml-1 whitespace-nowrap">Register here</a></p>
                         </div>
 
+                        {successMessage && <p className="text-green text-center">{successMessage}</p>}
+                        {errorMessage && <p className="text-red text-center">{errorMessage}</p>}
+
                         <div>
                             <label className="text-gray-800 text-xs block mb-2">Username</label>
                             <div className="relative flex items-center">
@@ -73,8 +95,20 @@ function Login() {
                         <div className="mt-8">
                             <label className="text-gray-800 text-xs block mb-2">Password</label>
                             <div className="relative flex items-center">
-                                <input name="password" type="password" required className="w-full text-sm border-b border-gray-300 focus:border-gray-800 px-2 py-3 outline-none" placeholder="Enter password" />
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="#bbb" stroke="#bbb" className="w-[18px] h-[18px] absolute right-2 cursor-pointer" viewBox="0 0 128 128">
+                            <input
+  name="password"
+  type={showPassword ? "text" : "password"} // Toggle based on state
+  required
+  className="w-full text-sm border-b border-gray-300 focus:border-gray-800 px-2 py-3 outline-none"
+  placeholder="Enter password"
+/>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  fill="#bbb"
+  stroke="#bbb"
+  className="w-[18px] h-[18px] absolute right-2 cursor-pointer"
+  viewBox="0 0 128 128"
+  onClick={() => setShowPassword(!showPassword)}> // Toggle password visibility
                                     <path d="M64 104C22.127 104 1.367 67.496.504 65.943a4 4 0 0 1 0-3.887C1.367 60.504 22.127 24 64 24s62.633 36.504 63.496 38.057a4 4 0 0 1 0 3.887C126.633 67.496 105.873 104 64 104zM8.707 63.994C13.465 71.205 32.146 96 64 96c31.955 0 50.553-24.775 55.293-31.994C114.535 56.795 95.854 32 64 32 32.045 32 13.447 56.775 8.707 63.994zM64 88c-13.234 0-24-10.766-24-24s10.766-24 24-24 24 10.766 24 24-10.766 24-24 24zm0-40c-8.822 0-16 7.178-16 16s7.178 16 16 16 16-7.178 16-16-7.178-16-16-16z" data-original="#000000"></path>
                                 </svg>
                             </div>
@@ -95,32 +129,32 @@ function Login() {
                         </div>
 
                         <div className="mt-12">
-        <button 
-          type="submit" 
-          className="w-full py-3 px-6 text-sm font-semibold tracking-wider rounded-full text-white bg-gray-800 hover:bg-[#222] focus:outline-none"
-          disabled={loading} // Disable button when loading
-        >
-          {loading ? (
-            <svg 
-              aria-hidden="true" 
-              role="status" 
-              className="inline mr-3 w-4 h-4 text-white animate-spin" 
-              viewBox="0 0 100 101" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path 
-                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" 
-                fill="#E5E7EB"
-              ></path>
-              <path 
-                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" 
-                fill="currentColor"
-              ></path>
-            </svg>
-          ) : (
-            'Sign in'
-          )}  
+                            <button 
+                                type="submit" 
+                                className="w-full py-3 px-6 text-sm font-semibold tracking-wider rounded-full text-white bg-gray-800 hover:bg-[#222] focus:outline-none"
+                                disabled={loading} // Disable button when loading
+                            >
+                                {loading ? (
+                                    <svg 
+                                        aria-hidden="true" 
+                                        role="status" 
+                                        className="inline mr-3 w-4 h-4 text-white animate-spin" 
+                                        viewBox="0 0 100 101" 
+                                        fill="none" 
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path 
+                                            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" 
+                                            fill="#E5E7EB"
+                                        ></path>
+                                        <path 
+                                            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" 
+                                            fill="currentColor"
+                                        ></path>
+                                    </svg>
+                                ) : (
+                                    'Sign in'
+                                )}  
                             </button>
                         </div>
 
@@ -129,8 +163,6 @@ function Login() {
                             <p className="text-sm text-gray-800 text-center">or</p>
                             <hr className="w-full border-gray-300" />
                         </div>
-
-                        {errorMessage && <p className="text-red-500 text-center">{errorMessage}</p>}
                     </form>
                 </div>
             </div>

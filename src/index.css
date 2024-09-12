@@ -5,7 +5,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(90deg, #9fa5eb, #8070d8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
 
+html {
+  transition:
+    background-color 0.5s,
+    color 0.5s;
+}
 :root {
   --font-sora: "Sora", sans-serif;
   --font-code: "Source Code Pro", monospace;

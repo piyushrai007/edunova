@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useSwipeable } from 'react-swipeable'; // Import the swipeable hook
 import api from '../api/api';
 import './user_components/StudentDashboard.css';
 import Modal from 'react-modal';
 import Loading from './Loading';
 import MyQuillComponent from './user_components/blogs';
 import { BlogChart, UserBlogs } from './user_components/userblogs';
-import Sidebar from './user_components/Sidebar';
+import {Sidebar} from './user_components/Sidebar';
 import Header from './user_components/Header';
 import Footer from './user_components/Footer';
 import ClassroomModal from './user_components/ClassroomModal';
 import Classroom from './user_components/Classroom';
 import DummyChartsComponent from './user_components/carts';
+import Main from './user_components/quiz/main';
+import SunMoon from '../sunmoon';
 
 Modal.setAppElement('#root');
 
@@ -22,29 +25,26 @@ function StudentDashboard() {
   const [lectures, setLectures] = useState([]);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [messages, setMessages] = useState({});
-  const [selectedSection, setSelectedSection] = useState('dashboard');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [blogs, setBlogs] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // For responsive sidebar
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedSection, setSelectedSection] = useState('dashboard');
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+
+  const sections = ['dashboard', 'classroom', 'blogs', 'quiz']; // Define available sections
+  const sidebarRef = useRef(null);
 
   const fetchBlogs = async () => {
     try {
-      let username = localStorage.getItem('username');
-      console.log('userblogs - Username:', username);
-      const response = await api.get(`/blogs/?author=${username}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-      console.log('Fetched blogs:', response.data);
+      const username = localStorage.getItem('username');
+      if (!username) throw new Error('Username not found');
+      const response = await api.get(`/blogs/?author=${username}`, { timeout: 50000 });
       setBlogs(response.data);
     } catch (error) {
       console.error('Error fetching blogs', error);
     }
-  }
-  useEffect(() => {
-    fetchBlogs();
-  }, []);
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -55,13 +55,10 @@ function StudentDashboard() {
       }
       try {
         const response = await api.get('current-user/', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
         setUser(response.data);
-        fetchClassrooms(response.data.id);
-        fetchResources();
+        await fetchClassrooms(response.data.id);
       } catch (error) {
         console.error('Error fetching user', error);
       }
@@ -70,13 +67,13 @@ function StudentDashboard() {
     const fetchClassrooms = async (userId) => {
       try {
         const response = await api.get(`students/${userId}/classrooms/`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
         });
         const classroomsWithDetails = await Promise.all(response.data.map(async classroom => {
-          const resources = await fetchResources(classroom.id);
-          const lectures = await fetchLectures(classroom.id);
+          const [resources, lectures] = await Promise.all([
+            fetchResources(classroom.id),
+            fetchLectures(classroom.id)
+          ]);
           return { ...classroom, resources, lectures };
         }));
         setClassrooms(classroomsWithDetails);
@@ -88,9 +85,7 @@ function StudentDashboard() {
     const fetchResources = async (classroomId) => {
       try {
         const response = await api.get(`classrooms/${classroomId}/resources/`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
         });
         return response.data;
       } catch (error) {
@@ -101,9 +96,7 @@ function StudentDashboard() {
     const fetchLectures = async (classroomId) => {
       try {
         const response = await api.get(`classrooms/${classroomId}/lectures/`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
         });
         return response.data;
       } catch (error) {
@@ -112,6 +105,21 @@ function StudentDashboard() {
     };
 
     fetchUser();
+    fetchBlogs();
+  }, []);
+
+  useEffect(() => {
+    const handleFirstVisit = () => {
+      const isFirstVisit = localStorage.getItem('isFirstVisit');
+      const isMobile = window.innerWidth < 768;
+
+      if (!isFirstVisit && isMobile) {
+        setIsFirstVisit(true);
+        localStorage.setItem('isFirstVisit', 'false');
+      }
+    };
+
+    handleFirstVisit();
   }, []);
 
   const joinClassroom = async () => {
@@ -119,9 +127,7 @@ function StudentDashboard() {
       const response = await api.post(`students/${user.id}/join_classroom/`, {
         classroom_code: classroomCode,
       }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
       });
       setClassrooms(prevClassrooms => [...prevClassrooms, response.data]);
       setModalIsOpen(false);
@@ -131,46 +137,83 @@ function StudentDashboard() {
     }
   };
 
-  const checkAnswer = (question, index) => {
-    if (selectedOptions[index] === question.correct_answer.charAt(0)) {
-      setMessages(prevMessages => ({ ...prevMessages, [index]: 'Congrats you got it!!!!' }));
-    } else {
-      setMessages(prevMessages => ({ ...prevMessages, [index]: `Correct answer is: ${question.correct_answer}` }));
+  const logout = () => {
+    localStorage.clear();
+    window.location.href = '/login';
+  };
+
+  const handleClickOutside = (event) => {
+    if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+      setIsSidebarOpen(false);
     }
   };
 
-  function logout() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    window.location.href = '/login';
-  }
+  const handleSwipe = (direction) => {
+    const currentIndex = sections.indexOf(selectedSection);
+    if (direction === 'LEFT' && currentIndex < sections.length - 1) {
+      setSelectedSection(sections[currentIndex + 1]);
+    } else if (direction === 'RIGHT' && currentIndex > 0) {
+      setSelectedSection(sections[currentIndex - 1]);
+    }else if (direction === 'LEFT' && currentIndex === 0) {
+      setIsSidebarOpen(true);
+    }
+    
+
+  };
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => handleSwipe('LEFT'),
+    onSwipedRight: () => handleSwipe('RIGHT'),
+    preventDefaultTouchmoveEvent: true,
+    trackMouse: true,
+  });
+
+  useEffect(() => {
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+  
 
   if (!user) {
-    return (
-      <Loading />
-    );
+    return <SunMoon />;
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <Header user={user} onLogoutClick={logout} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-      <div className="flex-1 flex">
+    <div
+      className={`flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 ${isFirstVisit ? 'left-swipe-animation' : ''}`}
+      {...swipeHandlers} // Attach swipe handlers to the container
+    >
+      <Header
+        user={user}
+        onLogoutClick={logout}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
+
+      <div className="flex flex-1 ">
         <Sidebar
           onDashboardClick={() => setSelectedSection('dashboard')}
           onClassroomClick={() => setSelectedSection('classroom')}
           onBlogsClick={() => setSelectedSection('blogs')}
-          isOpen={isSidebarOpen}
+          onQuizClick={() => setSelectedSection('quiz')}
           toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          isOpen={isSidebarOpen}
+          user={user}
+          onLogoutClick={logout}
+          ref={sidebarRef}
         />
-        <main className="flex-1 p-6">
+
+        <main className="flex-1 p-4 md:p-6">
           <div className="content">
+            {/* Render content based on the selected section */}
             {selectedSection === 'classroom' && (
               <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-3xl font-bold text-indigo-700">Your Classrooms</h2>
+                <div className="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-indigo-700">Your Classrooms</h2>
                   <button
                     id="joinClassroomButton"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-indigo-600 hover:to-blue-600 text-white font-bold py-2 px-6 rounded-full shadow-md transform hover:scale-105 transition duration-300 ease-in-out"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-indigo-600 hover:to-blue-600 text-white font-bold py-2 px-4 md:px-6 rounded-full shadow-md transform hover:scale-105 transition duration-300 ease-in-out mt-3 md:mt-0"
                     onClick={() => setModalIsOpen(true)}
                   >
                     + Join Classroom
@@ -183,14 +226,13 @@ function StudentDashboard() {
                   setClassroomCode={setClassroomCode}
                   joinClassroom={joinClassroom}
                 />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6">
                   {classrooms.map(classroom => (
                     <Classroom
                       key={classroom.id}
                       classroom={classroom}
                       selectedOptions={selectedOptions}
                       setSelectedOptions={setSelectedOptions}
-                      checkAnswer={checkAnswer}
                       messages={messages}
                     />
                   ))}
@@ -200,29 +242,43 @@ function StudentDashboard() {
 
             {selectedSection === 'blogs' && (
               <div>
-                <h1 className="text-3xl font-bold mb-4 text-indigo-700">Create a Blog</h1>
+                <h1 className="text-2xl md:text-3xl font-bold mb-4 text-indigo-700">Create a Blog</h1>
                 <MyQuillComponent />
-                <h1 className="text-3xl font-bold mb-4 text-indigo-700">Your Blogs</h1>
+                <h1 className="text-2xl md:text-3xl font-bold mb-4 text-indigo-700">Your Blogs</h1>
                 <UserBlogs blogs={blogs} fetchBlogs={fetchBlogs} />
               </div>
             )}
 
+            {selectedSection === 'quiz' && (
+              <Main isOpen={isQuizOpen} onRequestClose={() => setIsQuizOpen(false)} classrooms={classrooms} />
+            )}
+
             {selectedSection === 'dashboard' && (
-              <div>
-                <h1 className="text-3xl font-bold mb-4 text-indigo-700">Dashboard</h1>
-                <section className="text-gray-700 body-font dark:text-gray-200">
-                  <h2 className="text-lg font-semibold mb-4">Your Blogs Analysis</h2>
-                  <BlogChart blogs={blogs} />
+              <div className="container mx-auto px-4">
+                <div className="flex flex-wrap items-center justify-between mx-auto">
+                  <h1 className="animate-typing overflow-hidden whitespace-nowrap border-r-4 border-r-pink-400 pr-5 text-2xl md:text-3xl text-gradient font-bold">
+                    Welcome! {user.user.first_name}
+                  </h1>
+                  <h1 className="text-2xl md:text-3xl font-bold mb-4 text-indigo-700 dark:text-indigo-300">Dashboard</h1>
+                </div>
+                <section className="text-gray-700 body-font dark:text-gray-200 mb-6">
+                  <h2 className="text-lg md:text-xl font-semibold mb-4">Your Blogs Analysis</h2>
+                  <div className="w-full overflow-x-auto">
+                    <BlogChart blogs={blogs} />
+                  </div>
                 </section>
-                <section className="text-gray-700 body-font dark:text-gray-200">
-                  <h2 className="text-lg font-semibold mb-4">Your Academic Performance</h2>
-                  <DummyChartsComponent />
+                <section className="text-gray-700 body-font dark:text-gray-200 mb-6">
+                  <h2 className="text-lg md:text-xl font-semibold mb-4">Your Academic Performance</h2>
+                  <div className="w-full overflow-x-auto">
+                    <DummyChartsComponent />
+                  </div>
                 </section>
               </div>
             )}
           </div>
         </main>
       </div>
+
       <Footer />
     </div>
   );

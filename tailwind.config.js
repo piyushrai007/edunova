@@ -4,6 +4,8 @@ import plugin from "tailwindcss/plugin";
 
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: "class",
+
   theme: {
     extend: {
       colors: {
@@ -14,7 +16,18 @@ export default {
           4: "#7ADB78",
           5: "#858DFF",
           6: "#FF98E2",
-        },
+          
+          },
+          purple: "#A729F5",
+          darkNavy: "#313E51",
+          navy: "#3B4D66",
+          greyNavy: "#626C7F",
+          lightBluish: "#ABC1E1",
+          lightGrey: "#F4F6FA", // Ensure this color is defined
+          green: "#26D782",
+          red: "#EE5454",
+          btnHover: "#AC6AFF",
+          
         stroke: {
           1: "#26242C",
         },
@@ -33,6 +46,16 @@ export default {
           12: "#2E2A41",
           13: "#6C7275",
         },
+      },
+      backgroundImage: {
+        backgroundDesktopDark: "url('/pattern-background-desktop-dark.svg')",
+        backgroundDesktopLight: "url('/pattern-background-desktop-light.svg')",
+        backgroundMobileDark: "url('/pattern-background-mobile-dark.svg')",
+        backgroundMobileLight: "url('/pattern-background-mobile-light.svg')",
+        backgroundTabletDark: "url('/pattern-background-tablet-dark.svg')",
+        backgroundTabletLight: "url('/pattern-background-tablet-light.svg')",
+        "radial-gradient": "radial-gradient(var(--tw-gradient-stops))",
+        "conic-gradient": "conic-gradient(from 225deg, #FFC876, #79FFF7, #9F53FF, #FF98E2, #FFC876)",
       },
       fontFamily: {
         sans: ["var(--font-sora)", ...fontFamily.sans],
